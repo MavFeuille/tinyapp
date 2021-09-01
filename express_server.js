@@ -19,8 +19,8 @@ const urlDatabase = {
 const users = {
   "userRandomID": {
     id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    email: "1@1.com", 
+    password: "1"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -52,9 +52,11 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-//Display the Username
+//Display the user login status
 app.get("/urls", (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user = users[req.cookies["userID"]]
+  // console.log("user:", user)
+  const templateVars = { user, urls: urlDatabase };
 
   // if (templateVars.username) {
     res.render("urls_index", templateVars);
@@ -66,7 +68,8 @@ app.get("/urls", (req, res) => {
 
 //Registration - GET
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user = users[req.cookies["userID"]]
+  const templateVars = { user, urls: urlDatabase };
   res.render("urls_registration", templateVars);
 });
 
@@ -80,7 +83,7 @@ app.post("/register", (req, res) => {
   const userFound = findUserByEmail(email, users);
 
   if (userFound) {
-    return res.send("This email already exists!");
+    return res.send("This email already exists!")
   }
 
   //Generate new user id
@@ -93,6 +96,7 @@ app.post("/register", (req, res) => {
     password,
   };
 
+  
   //Add user info to the users database
   users[userID] = newUser;
   console.log("newUser:", newUser);
@@ -106,7 +110,9 @@ app.post("/register", (req, res) => {
 
 //newURL - GET
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const user = users[req.cookies["userID"]]
+  const templateVars = { user, urls: urlDatabase };
+  res.render("urls_new", templateVars);
 });
 
 //Redirect shortURL to longURL - GET
@@ -119,13 +125,15 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  const user = users[req.cookies["userID"]]
+  const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
 
 app.get("/urls/:shortURL/Update", (req, res) => {
-  const templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  const user = users[req.cookies["userID"]]
+  const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
@@ -179,10 +187,11 @@ app.post("/urls/:shortURL/Update", (req, res) => {
 
 ///Login - POST
 app.post("/login", (req, res) => {
-  const username = req.body.username;
+  const email = req.body.email;
+  const user = findUserByEmail(email, users);
 
-  console.log("cookie: ", req.body.username);
-  res.cookie("username", username); //cookie name is set manually
+
+  res.cookie("userID", user.id); //cookie name is set manually
   
 
   // userDatabase = {"username": res.cookie("username", req.body.username)};
@@ -193,7 +202,7 @@ app.post("/login", (req, res) => {
 // Logout - POST
 app.post("/logout", (req,res) => {
     
-    res.clearCookie("username"); //<- this will need to be the cookie we set in res.cookie in post/login
+    res.clearCookie("userID"); //<- this will need to be the cookie we set in res.cookie in post/login
     // console.log("cookie: ", req.body.username);
     res.redirect("/urls");
 
