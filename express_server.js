@@ -1,7 +1,7 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-// const uuid = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 const PORT = 8080;
@@ -16,23 +16,28 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-// const users = {
-//   "userRandomID": {
-//     id: "userRandomID", 
-//     email: "user@example.com", 
-//     password: "purple-monkey-dinosaur"
-//   },
-//  "user2RandomID": {
-//     id: "user2RandomID", 
-//     email: "user2@example.com", 
-//     password: "dishwasher-funk"
-//   }
-// };
+const users = {
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+};
 
-// //Helper functions to check if email is found from users database
-// const findUserByEmail = function (email, users) {
-
-// };
+// Helper functions to check if email is found from users database
+const findUserByEmail = function (email, users) {
+  for (let userID in users) {
+    if (users[userID].email === email) {
+      return users[userID];
+    }
+  }
+  return false;
+};
 
 
 app.get("/", (req, res) => {
@@ -68,18 +73,33 @@ app.get("/register", (req, res) => {
 //Registration - POST
 app.post("/register", (req, res) => {
   // console.log("user info: ", req.body);
-  // const email = req.body.email;
-  // const password = req.body.password;
+  const email = req.body.email;
+  const password = req.body.password;
 
+  //Check if user already exists in users database
+  const userFound = findUserByEmail(email, users);
 
-  // //Generate new user id
-  // const userID = uuid().substr(0,8);
-  // const newUser = {
-  //   id: userID,
-  //   email,
-  //   password,
-  // };
+  if (userFound) {
+    return res.send("This email already exists!");
+  }
 
+  //Generate new user id
+  const userID = uuidv4().substr(0, 8);
+  // console.log("uuid: ", uuidv4());
+  
+  const newUser = {
+    id: userID,
+    email,
+    password,
+  };
+
+  //Add user info to the users database
+  users[userID] = newUser;
+  console.log("newUser:", newUser);
+
+  //set cookie to remember the user
+  res.cookie('userID', userID);
+  
 
   res.redirect("/urls");
 });
