@@ -70,6 +70,8 @@ app.get("/urls", (req, res) => {
 app.get("/register", (req, res) => {
   const user = users[req.cookies["userID"]]
   const templateVars = { user, urls: urlDatabase };
+
+
   res.render("urls_registration", templateVars);
 });
 
@@ -83,7 +85,11 @@ app.post("/register", (req, res) => {
   const userFound = findUserByEmail(email, users);
 
   if (userFound) {
-    return res.send("This email already exists!")
+    return res.status(400).send("This email already exists!")
+  }
+  if (email.length === 0|| password.length === 0) {
+    res.status(400).send("Email or Password is empty. Please fill in both information.");
+    
   }
 
   //Generate new user id
@@ -124,13 +130,14 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+//shortURL page- GET
 app.get("/urls/:shortURL", (req, res) => {
   const user = users[req.cookies["userID"]]
   const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
-
+//update shortURL - GET
 app.get("/urls/:shortURL/Update", (req, res) => {
   const user = users[req.cookies["userID"]]
   const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
