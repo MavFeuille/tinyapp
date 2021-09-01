@@ -16,7 +16,6 @@ const urlDatabase = {
 };
 
 
-
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -30,15 +29,15 @@ app.get("/urls.json", (req, res) => {
 });
 
 //Display the Username
-app.get("/login", (req, res) => {
-  const templateVars= {username: req.cookies["username"]};
-
-  res.render("url_index", templateVars);
-});
-
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+
+  // if (templateVars.username) {
+    res.render("urls_index", templateVars);
+  // } else {
+  //   res.redirect('/login');
+  // }
+  
 });
 
 app.get("/urls/new", (req, res) => {
@@ -65,7 +64,7 @@ app.get("/urls/:shortURL/Update", (req, res) => {
 
 
 
-
+//Generate shortURL
 app.post("/urls", (req, res) => {
   console.log(req.body.longURL);
   console.log(generateRandomString());
@@ -93,7 +92,7 @@ generateRandomString();
 
 
 
-//delete url from database
+//Delete url from database
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   console.log(`Delete shortURL request sent:`, req.params.shortURL);
@@ -105,20 +104,33 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //Edit URL
 app.post("/urls/:shortURL/Update", (req, res) => {
   const shortURL = req.params.shortURL;
-  console.log(`start update`)
+  console.log(`start update`);
   urlDatabase[shortURL] = req.body.updatedURL
-  console.log(`Update URL request sent: `, req.params.shortURL)
-  res.redirect("/urls")
+  console.log(`Update URL request sent: `, shortURL);
+  res.redirect("/urls");
 });
 
-//Login
+///Login
 app.post("/login", (req, res) => {
-  
+  const username = req.body.username;
+
   console.log("cookie: ", req.body.username);
-  res.cookie("username", req.body.username);
+  res.cookie("username", username); //cookie name is set manually
+  
+
+  // userDatabase = {"username": res.cookie("username", req.body.username)};
 
   res.redirect("/urls");
 });
+
+// Logout
+app.post("/logout", (req,res) => {
+    
+    res.clearCookie("username"); //<- this will need to be the cookie we set in res.cookie in post/login
+    // console.log("cookie: ", req.body.username);
+    res.redirect("/urls");
+
+})
 
 
 app.listen(PORT, () => {
