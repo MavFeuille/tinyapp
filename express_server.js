@@ -1,10 +1,14 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
+
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,6 +27,13 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
+});
+
+//Display the Username
+app.get("/login", (req, res) => {
+  const templateVars= {username: req.cookies["username"]};
+
+  res.render("url_index", templateVars);
 });
 
 app.get("/urls", (req, res) => {
@@ -99,6 +110,16 @@ app.post("/urls/:shortURL/Update", (req, res) => {
   console.log(`Update URL request sent: `, req.params.shortURL)
   res.redirect("/urls")
 });
+
+//Login
+app.post("/login", (req, res) => {
+  
+  console.log("cookie: ", req.body.username);
+  res.cookie("username", req.body.username);
+
+  res.redirect("/urls");
+});
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
