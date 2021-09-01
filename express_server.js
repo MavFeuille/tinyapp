@@ -52,17 +52,22 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//Login - GET
+app.get("/login", (req, res) => {
+  const user = users[req.cookies["userID"]]
+  const templateVars = { user, urls: urlDatabase };
+
+  res.render("urls_login", templateVars);
+});
+
+
 //Display the user login status
 app.get("/urls", (req, res) => {
   const user = users[req.cookies["userID"]]
   // console.log("user:", user)
   const templateVars = { user, urls: urlDatabase };
 
-  // if (templateVars.username) {
-    res.render("urls_index", templateVars);
-  // } else {
-  //   res.redirect('/login');
-  // }
+  res.render("urls_index", templateVars);
   
 });
 
