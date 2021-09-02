@@ -3,14 +3,18 @@ const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
 
+
 const app = express();
 const PORT = 8080;
+
+//ALL MIDDLEWARE
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 
 
+//Databases
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -28,10 +32,9 @@ const users = {
     password: "2"
   }
 };
-
 // console.log("users: ", users);
 
-// Helper functions to check if email is found from users database
+// Helper function to check if email is found from users database
 const findUserByEmail = function (email, users) {
   for (let userID in users) {
     if (users[userID].email === email) {
@@ -41,6 +44,7 @@ const findUserByEmail = function (email, users) {
   return false;
 };
 
+//Helper function to check for user authentication
 const authenticateUser = function (email, password, users) {
   const userFound = findUserByEmail(email, users);
 
@@ -153,6 +157,7 @@ app.post("/register", (req, res) => {
 
   //set cookie to remember the user
   res.cookie('userID', userID);
+  // console.log("userID:", userID);
   
 
   res.redirect("/urls");
@@ -163,8 +168,36 @@ app.post("/register", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const user = users[req.cookies["userID"]]
   const templateVars = { user, urls: urlDatabase };
+
+
   res.render("urls_new", templateVars);
 });
+
+//Create shortURL - POST
+app.post("/urls", (req, res) => {
+  console.log(req.body.longURL);
+  console.log(generateRandomString());
+  const longURL = req.body.longURL
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = longURL;
+
+  if (!longURL) {
+    res.sendStatus(404);
+  }
+  res.redirect(`/urls/${shortURL}`);
+});
+const generateRandomString = function() {
+  let randomString = "";
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (let i = 0; i < 6; i++)
+    randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+
+  return randomString;
+}
+
+generateRandomString();
+
 
 //Redirect shortURL to longURL - GET
 app.get("/u/:shortURL", (req, res) => {
@@ -191,30 +224,6 @@ app.get("/urls/:shortURL/Update", (req, res) => {
 
 
 
-//Generate shortURL - POST
-app.post("/urls", (req, res) => {
-  console.log(req.body.longURL);
-  console.log(generateRandomString());
-  const longURL = req.body.longURL
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
-
-  if (!longURL) {
-    res.sendStatus(404);
-  }
-  res.redirect(`/urls/${shortURL}`);
-});
-const generateRandomString = function() {
-  let randomString = "";
-  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-  for (let i = 0; i < 6; i++)
-    randomString += characters.charAt(Math.floor(Math.random() * characters.length));
-
-  return randomString;
-}
-
-generateRandomString();
 
 
 
