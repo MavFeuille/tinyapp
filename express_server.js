@@ -42,7 +42,7 @@ const users = {
 
 // console.log("users: ", users);
 
-// Helper functions to check if email is found from users database
+// Helper function to check if email is found from users database
 const findUserByEmail = function (email, users) {
   for (let userID in users) {
     if (users[userID].email === email) {
@@ -52,6 +52,7 @@ const findUserByEmail = function (email, users) {
   return false;
 };
 
+// Helper function for authentication
 const authenticateUser = function (email, password, users) {
   const userFound = findUserByEmail(email, users);
 
@@ -59,7 +60,23 @@ const authenticateUser = function (email, password, users) {
     return userFound;
   }
   return false;
-}
+};
+
+// Helper function returning URLs where userID is equal to the id of currently logged-in user
+const urlsForUser = function (userID, urlDatabase) {
+  // const user = users[req.cookies["userID"]];
+  const userUrls = {};
+
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === userID) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+      // console.log("userUrls[shortURL]", userUrls[shortURL]);
+      // console.log("shortURL", urlDatabase[shortURL]);
+      // console.log("id: ", userID);
+    }
+  }
+  return userUrls;
+};
 
 
 //------------------- App functionalities --------------------
@@ -104,13 +121,20 @@ app.post("/login", (req, res) => {
 
 //Display the user login status
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["userID"]]
-  // console.log("user:", user)
-  const templateVars = { user, urls: urlDatabase };
 
+ const user = users[req.cookies["userID"]]
+ if (user) {
+  const userID = user.id
+  console.log("userID", userID);
+  const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
   res.render("urls_index", templateVars);
-  
+ } else {
+   return res.redirect("/login");
+ }
+
 });
+
+
 
 
 // Logout - POST
@@ -254,25 +278,70 @@ app.get("/urls/:shortURL/Update", (req, res) => {
 
 //Edit URL - POST
 app.post("/urls/:shortURL/Update", (req, res) => {
+  // const email = req.body.email;
+  // const password = req.body.password;
+  // const user = authenticateUser(email, password,users);
+  const userID = users[req.cookies["userID"]];
   const shortURL = req.params.shortURL;
-  console.log(`start update`);
-  urlDatabase[shortURL].longURL = req.body.updatedURL
-  console.log(`Update URL request sent: `, shortURL);
-  // console.log(`Updated longURL: `, req.body.updatedURL)
-  res.redirect("/urls");
+
+  if (!userID) {
+    return res.status(401).send("Authorization required to edit this short URL.");
+  } else {
+    
+    // const userID = user.id
+    console.log("userID", userID);
+    const urlsUser = urlsForUser(userID, urlDatabase);
+    // const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
+    if (urlsUser) {
+    console.log(`start update`);
+    urlDatabase[shortURL].longURL = req.body.updatedURL
+    console.log(`Update URL request sent: `, shortURL);
+    
+    return res.redirect("/urls");
+    } else {
+      return res.status(401).send("You have no access to this URL");
+    }
+    
+  }
+  
+
+  
+  // // console.log(`Updated longURL: `, req.body.updatedURL)
+  // res.redirect("/urls");
 });
 
 
 //Delete url from database - POST
 app.post("/urls/:shortURL/delete", (req, res) => {
+  // const email = req.body.email;
+  // const password = req.body.password;
+  // const user = authenticateUser(email, password, users);
+  const userID = users[req.cookies["userID"]];
+ 
+
   const shortURL = req.params.shortURL;
-  console.log(`Delete shortURL request sent:`, req.params.shortURL);
-  delete urlDatabase[shortURL];
   
-  res.redirect("/urls");
+
+  if (!userID) {
+    return res.status(401).send("Authorization required to delete this short URL.");
+  } else {
+  // const userID = user.id
+  console.log("userID", userID);
+  const urlsUser = urlsForUser(userID, urlDatabase);
+  // const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
+  console.log("urlsUser: ", urlsUser);
+  if (urlsUser) {
+    console.log(`Delete shortURL request sent:`, req.params.shortURL);
+    delete urlDatabase[shortURL];
+    
+    return res.redirect("/urls");
+  } else {
+    return res.status(401).send("You do not have access to this URL");
+  }
+}
+ 
+
 });
-
-
 
 
 
