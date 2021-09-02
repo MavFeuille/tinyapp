@@ -24,10 +24,12 @@ const users = {
   },
  "user2RandomID": {
     id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
+    email: "2@2.com", 
+    password: "2"
   }
 };
+
+// console.log("users: ", users);
 
 // Helper functions to check if email is found from users database
 const findUserByEmail = function (email, users) {
@@ -39,6 +41,17 @@ const findUserByEmail = function (email, users) {
   return false;
 };
 
+const authenticateUser = function (email, password, users) {
+  const userFound = findUserByEmail(email, users);
+
+  if (userFound && userFound.password === password) {
+    return userFound;
+  }
+  return false;
+}
+
+
+//------------------- App functionalities --------------------
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -60,6 +73,23 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+///Login - POST
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = authenticateUser(email, password,users);
+
+  // console.log("users.pw: ", users.password);
+  
+  if(user) {
+    res.cookie("userID", user.id); //cookie name is set manually
+    res.redirect("/urls");
+  } else {
+    res.status(403).send("Unmatch credentials");
+  }
+  
+});
+
 
 //Display the user login status
 app.get("/urls", (req, res) => {
@@ -70,6 +100,15 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
   
 });
+
+
+// Logout - POST
+app.post("/logout", (req,res) => {
+    
+  res.clearCookie("userID"); //<- this will need to be the cookie we set in res.cookie in post/login
+  res.redirect("/urls");
+
+})
 
 //Registration - GET
 app.get("/register", (req, res) => {
@@ -118,6 +157,7 @@ app.post("/register", (req, res) => {
 
   res.redirect("/urls");
 });
+
 
 //newURL - GET
 app.get("/urls/new", (req, res) => {
@@ -197,28 +237,7 @@ app.post("/urls/:shortURL/Update", (req, res) => {
   res.redirect("/urls");
 });
 
-///Login - POST
-app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const user = findUserByEmail(email, users);
 
-
-  res.cookie("userID", user.id); //cookie name is set manually
-  
-
-  // userDatabase = {"username": res.cookie("username", req.body.username)};
-
-  res.redirect("/urls");
-});
-
-// Logout - POST
-app.post("/logout", (req,res) => {
-    
-    res.clearCookie("userID"); //<- this will need to be the cookie we set in res.cookie in post/login
-    // console.log("cookie: ", req.body.username);
-    res.redirect("/urls");
-
-})
 
 
 app.listen(PORT, () => {
