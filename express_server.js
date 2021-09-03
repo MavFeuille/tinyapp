@@ -6,6 +6,15 @@ const { v4: uuidv4 } = require("uuid");
 const app = express();
 const PORT = 8080;
 
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+const salt = bcrypt.genSaltSync(saltRounds);
+
+const user01Password = bcrypt.hashSync("1@1.com", salt);
+const user02Password = bcrypt.hashSync("2@2.com", salt);
+
+
+
 app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -19,24 +28,24 @@ app.use(bodyParser.urlencoded({extended: true}));
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
-      userID: "userRandomID"
+      userID: "user01"
   },
   i3BoGr: {
       longURL: "https://www.google.ca",
-      userID: "user2RandomID"
+      userID: "user02"
   }
 };
 
 const users = {
-  "userRandomID": {
-    id: "userRandomID", 
+  "user01": {
+    id: "user01", 
     email: "1@1.com", 
-    password: "1"
+    password: user01Password
   },
- "user2RandomID": {
-    id: "user2RandomID", 
+ "user02": {
+    id: "user02", 
     email: "2@2.com", 
-    password: "2"
+    password: user02Password
   }
 };
 
@@ -168,7 +177,6 @@ app.post("/register", (req, res) => {
   }
   if (email.length === 0|| password.length === 0) {
     res.status(400).send("Email or Password is empty. Please fill in both information.");
-    
   }
 
   //Generate new user id
@@ -178,7 +186,7 @@ app.post("/register", (req, res) => {
   const newUser = {
     id: userID,
     email,
-    password,
+    password: bcrypt.hashSync(password, salt),
   };
 
   
