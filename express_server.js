@@ -155,6 +155,7 @@ app.post("/urls", (req, res) => {
   
   console.log(req.body.longURL);
   console.log(generateRandomString());
+  
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL, userID };
@@ -296,6 +297,7 @@ app.post("/register", (req, res) => {
     res.status(400).send("Email or Password is empty. Please fill in both information.");
   }
 
+
   //Generate new user id
   const userID = uuidv4().substr(0, 8);
   
@@ -305,7 +307,6 @@ app.post("/register", (req, res) => {
     password: bcrypt.hashSync(password, salt),
   };
 
-  
   //Add user info to the users database
   users[userID] = newUser;
   console.log("newUser:", newUser);
