@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
 
-const { findUserByEmail } = require('../helpers.js');
+const { findUserByEmail, authenticateUser, urlsForUser, generateRandomString } = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -49,6 +49,61 @@ describe('#getUserByEmail', function() {
   });
 });
 
+
+describe('#authenticateUser', function() {
+  it('should return user object and null error', function() {
+    // const user = testUsers;
+    // const authenticateUser = authenticateUser(testUsers);
+      // assert.deepEqual(authenticateUser);
+   
+    const user = authenticateUser("user@example.com", "purple-monkey-dinosaur", testUsers);
+    console.log("user:", user);
+    const expectedOutput = {user: {
+      id: 'userRandomID',
+      
+      email: 'user@example.com',
+      
+      password: bcrypt.hashSync("purple-monkey-dinosaur", salt)
+   },
+   error: null }; 
+
+    assert.deepEqual({ 
+      user: {
+        id: 'userRandomID',
+        
+        email: 'user@example.com',
+        
+        password: bcrypt.hashSync("purple-monkey-dinosaur", salt)
+     },
+     error: null 
+    }, expectedOutput);
+  });
+
+
+
+    it('should return user： null  and error: "Bad password"', function() {
+    
+   
+      const user = authenticateUser("user@example.com", "12345", testUsers);
+      console.log("user:", user);
+      const expectedOutput = {user: null, error: "Bad password" }; 
+  
+      assert.deepEqual(user, expectedOutput);
+    
+
+  });
+
+  it('should return user： null  and error: "Bad email"', function() {
+    
+   
+    const user = authenticateUser("hello@1.com", "purple-monkey-dinosaur", testUsers);
+    console.log("user:", user);
+    const expectedOutput = {user: null, error: "Bad email" }; 
+
+    assert.deepEqual(user, expectedOutput);
+  });
+});
+
 describe('#urlsForUser', function() {
   it('should return shortURL from corresponding userID', function() {
     const user = findUserByEmail("user2RandomID", testUrlDatabase);
@@ -65,59 +120,13 @@ describe('#urlsForUser', function() {
   });
 });
 
-
-describe('#authenticateUser', function() {
-  it('should return user object and null error', function() {
-    const user = authenticateUser("user2RandomID", testUsers);
-    console.log("user:", user);
-    const expectedOutput = {
-      user: {
-         id: 'userRandomID',
-       
-         email: 'user@example.com',
-       
-         password: '$2b$10$/3Dk1mCzsoFm21BbE5OrluucVatXsYTQ.Sazz2BZP.lGTU/AYQiwm'
-        } 
-      };
-    assert.deepEqual({ 
-      user: {
-        id: 'userRandomID',
-        
-        email: 'user@example.com',
-        
-        password: '$2b$10$/3Dk1mCzsoFm21BbE5OrluucVatXsYTQ.Sazz2BZP.lGTU/AYQiwm'
-     },
-     error: null 
-    }, { 
-      user: { 
-        id: 'userRandomID',
-        
-        email: 'user@example.com',
-        
-        password: '$2b$10$/3Dk1mCzsoFm21BbE5OrluucVatXsYTQ.Sazz2BZP.lGTU/AYQiwm'
-      },
-      error: null
-    });
+describe('#generateRandomString', function() {
+  it('should able to return a random string but neither null nor undefined', function() {
+    const input = generateRandomString();
+    // console.log("user:", user);
+    const expectedOutput = input;
+    assert.exists(input, expectedOutput);
   });
 
-  // it('should return more than one shortURL from corresponding userID', function() {
-  //   const user = findUserByEmail("user1RandomID", testUsers);
-  //   const expectedOutput = "T3O1gC, FjAQEu";
-  //   assert.equal("T3O1gC, FjAQEu", "T3O1gC, FjAQEu");
-    
-  // });
+ 
 });
-
-// user:  {
-//   id: 'userRandomID',
-//   email: 'user@example.com',
-//   password: '$2b$10$/3Dk1mCzsoFm21BbE5OrluucVatXsYTQ.Sazz2BZP.lGTU/AYQiwm'
-// }
-// AuthL  {
-//   user: {
-//     id: 'userRandomID',
-//     email: 'user@example.com',
-//     password: '$2b$10$/3Dk1mCzsoFm21BbE5OrluucVatXsYTQ.Sazz2BZP.lGTU/AYQiwm'
-//   },
-//   error: null
-// }
