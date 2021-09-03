@@ -2,7 +2,7 @@
 const { findUserByEmail, authenticateUser, urlsForUser, generateRandomString } = require("./helpers");
 
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
 
@@ -16,9 +16,11 @@ const salt = bcrypt.genSaltSync(saltRounds);
 
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
-
+app.use(cookieSession({
+  name: "session",
+  keys: ["eSgVkYp3s6v9y$B&E)H@McQfTjWmZq4t", "z$C&F)J@NcRfUjWnZr4u7x!A%D*G-KaP" ]
+}));
 
 // const urlDatabase = {
 //   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -34,6 +36,7 @@ const urlDatabase = {
       longURL: "https://www.google.ca",
       userID: "user02"
   }
+  
 };
 
 // const user01Password = bcrypt.hashSync("1@1.com", salt);
@@ -43,12 +46,12 @@ const users = {
   "user01": {
     id: "user01", 
     email: "1@1.com", 
-    password: bcrypt.hashSync("1@1.com", salt)
+    password: bcrypt.hashSync("1", salt)
   },
  "user02": {
     id: "user02", 
     email: "2@2.com", 
-    password: bcrypt.hashSync("2@2.com", salt)
+    password: bcrypt.hashSync("2", salt)
   }
 };
 
@@ -58,21 +61,68 @@ const users = {
 
 //------------------- App functionalities --------------------
 
+// app.get("/hello", (req, res) => {
+//     res.send("<html><body>Hello <b>World</b></body></html>\n");
+//   });
+  
+//   app.get("/urls.json", (req, res) => {
+//     res.json(urlDatabase);
+//   });
+
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const user = users[req.session["userID"]]
+  if (user) {
+   const userID = user.id
+   console.log("userID", userID);
+   const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
+   res.render("urls_index", templateVars);
+  } else {
+    return res.redirect("/login");
+  }
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+
+//Display the user login status
+app.get("/urls", (req, res) => {
+
+  const user = users[req.session["userID"]]
+  if (user) {
+   const userID = user.id
+   console.log("userID", userID);
+   const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
+   res.render("urls_index", templateVars);
+  } else {
+    return res.status(401).send("Login required");
+  }
+ 
+ });
+
+ //Create shortURL - GET
+app.get("/urls/new", (req, res) => {
+  const user = users[req.session["userID"]]
+  const templateVars = { user, urls: urlDatabase };
+
+  if (user) {
+    return res.render("urls_new", templateVars);
+  } 
+  res.redirect("/login");
+
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
+//shortURL page- GET
+app.get("/urls/:shortURL", (req, res) => {
+  const userID = req.session["userID"];
+  const user = users[userID];
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  const templateVars = { user, shortURL, longURL };
+  res.render("urls_show", templateVars);
 });
+
 
 //Login - GET
 app.get("/login", (req, res) => {
-  const user = users[req.cookies["userID"]]
+  const user = users[req.session["userID"]]
   const templateVars = { user, urls: urlDatabase };
 
   res.render("urls_login", templateVars);
@@ -90,7 +140,7 @@ app.post("/login", (req, res) => {
     console.log(userResult.error);
     return res.status(401).send("Invalid credentials");
   }
-  res.cookie("userID", userResult.user.id); 
+  req.session["userID"] = userResult.user.id; 
   return res.redirect("/urls");
 
   // ----------- old login -------------
@@ -104,35 +154,18 @@ app.post("/login", (req, res) => {
 });
 
 
-//Display the user login status
-app.get("/urls", (req, res) => {
-
- const user = users[req.cookies["userID"]]
- if (user) {
-  const userID = user.id
-  console.log("userID", userID);
-  const templateVars = { user, urls: urlsForUser(userID, urlDatabase) };
-  res.render("urls_index", templateVars);
- } else {
-   return res.redirect("/login");
- }
-
-});
-
-
-
-
 // Logout - POST
 app.post("/logout", (req,res) => {
-    
-  res.clearCookie("userID"); //<- this will need to be the cookie we set in res.cookie in post/login
+
+  req.session["userID"] = null;
+  // res.clearCookie("userID"); //<- this will need to be the cookie we set in res.cookie in post/login
   res.redirect("/urls");
 
 })
 
 //Registration - GET
 app.get("/register", (req, res) => {
-  const user = users[req.cookies["userID"]]
+  const user = users[req.session["userID"]]
   const templateVars = { user, urls: urlDatabase };
 
 
@@ -171,29 +204,19 @@ app.post("/register", (req, res) => {
   console.log("newUser:", newUser);
 
   //set cookie to remember the user
-  res.cookie('userID', userID);
+  req.session["userID"] = userID;
   
 
   res.redirect("/urls");
 });
 
 
-//Create shortURL - GET
-app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["userID"]]
-  const templateVars = { user, urls: urlDatabase };
 
-  if (user) {
-    return res.render("urls_new", templateVars);
-  } 
-  res.redirect("/login");
-
-});
 
 
 //Create shortURL - POST
 app.post("/urls", (req, res) => {
-  const userID = req.cookies["userID"];
+  const userID = req.session["userID"];
   const user = users[userID];
   // const templateVars = { user, urls: urlDatabase };
 
@@ -231,19 +254,11 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlObj.longURL);
 });
 
-//shortURL page- GET
-app.get("/urls/:shortURL", (req, res) => {
-  const userID = req.cookies["userID"];
-  const user = users[userID];
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
-  const templateVars = { user, shortURL, longURL };
-  res.render("urls_show", templateVars);
-});
+
 
 //Update shortURL - GET
 app.get("/urls/:shortURL/Update", (req, res) => {
-  const user = users[req.cookies["userID"]]
+  const user = users[req.session["userID"]]
   const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL};
   res.render("urls_show", templateVars);
 });
@@ -253,7 +268,7 @@ app.post("/urls/:shortURL/Update", (req, res) => {
   // const email = req.body.email;
   // const password = req.body.password;
   // const user = authenticateUser(email, password,users);
-  const userID = users[req.cookies["userID"]];
+  const userID = users[req.session["userID"]];
   const shortURL = req.params.shortURL;
 
   if (!userID) {
@@ -288,7 +303,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   // const email = req.body.email;
   // const password = req.body.password;
   // const user = authenticateUser(email, password, users);
-  const userID = users[req.cookies["userID"]];
+  const userID = users[req.session["userID"]];
  
 
   const shortURL = req.params.shortURL;
