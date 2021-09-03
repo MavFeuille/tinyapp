@@ -22,6 +22,15 @@ const findUserByEmail = function (email, users) {
 };
 
 // Helper function for authentication
+// const testUsers = {
+//   "userRandomID": {
+//     id: "userRandomID", 
+//     email: "user@example.com", 
+//     password: bcrypt.hashSync("purple-monkey-dinosaur", salt)
+//   },
+// };
+
+
 const authenticateUser = function (email, password, users) {
   
   let user;
@@ -43,6 +52,9 @@ const authenticateUser = function (email, password, users) {
 
 };
 
+// console.log("AuthL ", authenticateUser("user@example.com", "purple-monkey-dinosaur", testUsers ));
+
+
 // Helper function returning URLs where userID is equal to the id of currently logged-in user
 const urlsForUser = function(userID, urlDatabase) {
   // const user = users[req.cookies["userID"]];
@@ -51,9 +63,6 @@ const urlsForUser = function(userID, urlDatabase) {
   for (const shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID === userID) {
       userUrls[shortURL] = urlDatabase[shortURL];
-      // console.log("userUrls[shortURL]", userUrls[shortURL]);
-      // console.log("shortURL", urlDatabase[shortURL]);
-      // console.log("id: ", userID);
     }
   }
   return userUrls;
