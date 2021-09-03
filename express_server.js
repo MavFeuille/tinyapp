@@ -10,9 +10,6 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const salt = bcrypt.genSaltSync(saltRounds);
 
-const user01Password = bcrypt.hashSync("1@1.com", salt);
-const user02Password = bcrypt.hashSync("2@2.com", salt);
-
 
 
 app.set("view engine", "ejs");
@@ -36,18 +33,22 @@ const urlDatabase = {
   }
 };
 
+// const user01Password = bcrypt.hashSync("1@1.com", salt);
+// const user02Password = bcrypt.hashSync("2@2.com", salt);
+
 const users = {
   "user01": {
     id: "user01", 
     email: "1@1.com", 
-    password: user01Password
+    password: bcrypt.hashSync("1@1.com", salt)
   },
  "user02": {
     id: "user02", 
     email: "2@2.com", 
-    password: user02Password
+    password: bcrypt.hashSync("2@2.com", salt)
   }
 };
+
 
 // console.log("users: ", users);
 
@@ -63,12 +64,29 @@ const findUserByEmail = function (email, users) {
 
 // Helper function for authentication
 const authenticateUser = function (email, password, users) {
-  const userFound = findUserByEmail(email, users);
-
-  if (userFound && userFound.password === password) {
-    return userFound;
+  
+  let user;
+  for (const ID in users) {
+    if (users[ID].email === email) {
+      user = users[ID];
+    }
   }
-  return false;
+ 
+  if (user) {
+    
+   if (bcrypt.compareSync(password, user.password)) {
+    console.log("user: ", user)
+     return { user, error: null }
+   }
+   return { user: null, error: "Bad password" }
+  }
+  return { user: null, error: "Bad email" }
+
+  // -------- old authentication -------
+  // if (userFound && userFound.password === password) {
+  //   return userFound;
+  // }
+  // return false;
 };
 
 // Helper function returning URLs where userID is equal to the id of currently logged-in user
@@ -114,16 +132,24 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = authenticateUser(email, password,users);
+  const userResult = authenticateUser(email, password,users);
 
-  // console.log("users.pw: ", users.password);
-  
-  if(user) {
-    res.cookie("userID", user.id); //cookie name is set manually
-    res.redirect("/urls");
-  } else {
-    res.status(403).send("Unmatch credentials");
+  console.log("users.pw: ", users.password);
+
+  if (userResult.error) {
+    console.log(userResult.error);
+    return res.status(401).send("Invalid credentials");
   }
+  res.cookie("userID", userResult.user.id); 
+  return res.redirect("/urls");
+
+  // ----------- old login -------------
+  // if(user) {
+  //   res.cookie("userID", user.id); //cookie name is set manually
+  //   res.redirect("/urls");
+  // } else {
+  //   res.status(403).send("Unmatch credentials");
+  // }
   
 });
 
